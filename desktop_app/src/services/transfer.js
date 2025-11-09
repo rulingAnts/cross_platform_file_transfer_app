@@ -389,38 +389,72 @@ class TransferService extends EventEmitter {
   }
   
   async sendFileChunks(socket, transfer, chunkSize, streamCount) {
-    const fileStream = require('fs').createReadStream(transfer.tempPath, {
-      highWaterMark: chunkSize
-    });
+    const fs = require('fs');
+    const fileSize = transfer.size;
+    const totalChunks = Math.ceil(fileSize / chunkSize);
     
     let chunkIndex = 0;
     let totalSent = 0;
     const startTime = Date.now();
     
-    for await (const chunk of fileStream) {
-      // Calculate checksum for chunk
-      const chunkHash = crypto.createHash('sha256').update(chunk).digest('hex');
-      
-      // Send chunk
-      await this.sendChunkData(socket, {
-        transferId: transfer.id,
-        chunkIndex: chunkIndex++,
-        data: chunk.toString('base64'),
-        checksum: chunkHash
+    // For multi-stream, we'll send chunks in parallel batches
+    const chunksPerStream = Math.ceil(totalChunks / streamCount);
+    
+    // Read file in chunks
+    const readChunk = async (index) => {
+      return new Promise((resolve, reject) => {
+        const start = index * chunkSize;
+        const end = Math.min(start + chunkSize, fileSize);
+        const stream = fs.createReadStream(transfer.tempPath, { start, end: end - 1 });
+        
+        const chunks = [];
+        stream.on('data', chunk => chunks.push(chunk));
+        stream.on('end', () => resolve(Buffer.concat(chunks)));
+        stream.on('error', reject);
       });
+    };
+    
+    // Send chunks with parallelism
+    const sendBatch = async (batchStart, batchSize) => {
+      const promises = [];
       
-      totalSent += chunk.length;
-      transfer.sentChunks++;
+      for (let i = 0; i < batchSize && (batchStart + i) < totalChunks; i++) {
+        const idx = batchStart + i;
+        
+        promises.push((async () => {
+          const chunk = await readChunk(idx);
+          const chunkHash = crypto.createHash('sha256').update(chunk).digest('hex');
+          
+          await this.sendChunkData(socket, {
+            transferId: transfer.id,
+            chunkIndex: idx,
+            data: chunk.toString('base64'),
+            checksum: chunkHash
+          });
+          
+          await this.waitForChunkAck(socket, idx, 5000);
+          
+          return chunk.length;
+        })());
+      }
+      
+      const sizes = await Promise.all(promises);
+      return sizes.reduce((a, b) => a + b, 0);
+    };
+    
+    // Process chunks in parallel batches
+    for (let batch = 0; batch < totalChunks; batch += streamCount) {
+      const sent = await sendBatch(batch, Math.min(streamCount, totalChunks - batch));
+      
+      totalSent += sent;
+      transfer.sentChunks = batch + streamCount;
       
       // Update progress
-      transfer.progress = (totalSent / transfer.size) * 100;
+      transfer.progress = (totalSent / fileSize) * 100;
       const elapsed = (Date.now() - startTime) / 1000;
       transfer.speed = totalSent / elapsed;
       
       this.emit('transfer-progress', transfer);
-      
-      // Wait for chunk acknowledgment with timeout
-      await this.waitForChunkAck(socket, chunkIndex - 1, 5000);
     }
   }
   

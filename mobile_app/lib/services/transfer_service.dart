@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter_archive/flutter_archive.dart';
 import '../models/device.dart';
 import '../models/transfer.dart';
+import '../models/transfer_manifest.dart';
 import '../utils/wake_lock_helper.dart';
 import 'device_manager.dart';
 
@@ -36,6 +37,38 @@ class TransferService extends ChangeNotifier {
     
     // Start TLS server to receive files
     await _startServer();
+    
+    // Cleanup expired manifests
+    await ManifestManager.cleanupExpiredManifests();
+    
+    // Check for resumable transfers
+    await _checkResumableTransfers();
+  }
+  
+  Future<void> _checkResumableTransfers() async {
+    final resumable = await ManifestManager.getResumableTransfers();
+    
+    if (resumable.isNotEmpty) {
+      debugPrint('Found ${resumable.length} resumable transfer(s)');
+      
+      // Add them to transfers list with paused status
+      for (final manifest in resumable) {
+        final transfer = FileTransfer(
+          id: manifest.transferId,
+          deviceId: manifest.deviceId,
+          filePath: '',
+          fileName: manifest.fileName,
+          size: manifest.fileSize,
+          isDirectory: manifest.isDirectory,
+          status: TransferStatus.paused,
+          progress: manifest.progress,
+        );
+        
+        _transfers[manifest.transferId] = transfer;
+      }
+      
+      notifyListeners();
+    }
   }
   
   Future<void> _startServer() async {
