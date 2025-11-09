@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **BREAKING**: Replaced mDNS/Bonjour discovery with UDP broadcast discovery
+  - Discovery now uses UDP broadcast on port 8766 (no external dependencies)
+  - Removed `bonjour-service` dependency from desktop app
+  - Removed `nsd` dependency from mobile app
+  - Improved cross-platform compatibility (works on Windows without Bonjour installation)
+  - Better support for Android AVD emulators and VMs
+  - Discovery broadcasts every 5 seconds with 30-second device timeout
+  - Maintains backward compatibility with existing DeviceManager API
+
 ### Phase 4 Implementation - COMPLETE ✅
 
 #### WiFi Direct (Android-to-Android)

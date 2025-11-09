@@ -106,9 +106,9 @@
         <h3>Direct Device-to-Device</h3>
         <p>All file transfers happen directly between your devices on your local network:</p>
         <ul>
-            <li>Devices discover each other using mDNS/Bonjour (standard local network protocol)</li>
+            <li>Devices discover each other using UDP broadcast (standard local network protocol)</li>
             <li>Files are encrypted with TLS 1.3 and sent directly between devices</li>
-            <li>No internet connection required (except for device discovery)</li>
+            <li>No internet connection required</li>
             <li>Files never pass through any third-party servers</li>
         </ul>
 
@@ -125,7 +125,6 @@
         <p>Rapid Transfer requires the following permissions to function:</p>
         <ul>
             <li><strong>Network Access:</strong> To discover devices and transfer files</li>
-            <li><strong>Local Network (iOS/macOS):</strong> To use Bonjour for device discovery</li>
             <li><strong>Storage (Android):</strong> To read and write files you want to transfer</li>
             <li><strong>Location (Android):</strong> Required by Android for WiFi Direct and hotspot features (not used for actual location tracking)</li>
             <li><strong>Notifications:</strong> To notify you when transfers complete</li>

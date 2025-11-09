@@ -206,14 +206,14 @@ Based on file size:
 ## Integration Points
 
 ### Desktop → Mobile
-- Desktop publishes mDNS service
-- Mobile discovers via NSD
+- Desktop publishes UDP broadcast
+- Mobile discovers via UDP socket
 - Mobile connects via TLS
 - Mobile sends files to Desktop
 
 ### Mobile → Desktop
-- Mobile publishes NSD service
-- Desktop discovers via Bonjour
+- Mobile publishes UDP broadcast
+- Desktop discovers via UDP socket
 - Desktop connects via TLS
 - Desktop sends files to Mobile
 - (Receiving on mobile to be implemented)

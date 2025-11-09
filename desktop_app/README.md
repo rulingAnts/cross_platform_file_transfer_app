@@ -4,7 +4,7 @@ Cross-platform desktop application for rapid file transfer over local networks.
 
 ## Features
 
-- **Zero-config device discovery** using mDNS/Bonjour
+- **Zero-config device discovery** using UDP broadcast
 - **Multi-stream parallel transfers** for maximum speed
 - **TLS 1.3 encryption** for secure transfers
 - **Device pairing** with verification codes
@@ -59,7 +59,7 @@ npm run build:all
 - **Main Process** (`src/main.js`): Electron main process, manages windows and services
 - **Preload** (`src/preload.js`): Bridge between main and renderer processes
 - **Services**:
-  - `discovery.js`: mDNS device discovery
+  - `discovery.js`: UDP broadcast device discovery
   - `transfer.js`: File transfer management
   - `deviceManager.js`: Device and settings management
 - **UI** (`src/ui/`): HTML/CSS/JavaScript renderer process
