@@ -1,0 +1,123 @@
+{
+  "@@locale": "en",
+  "appTitle": "Rapid Transfer",
+  "@appTitle": {
+    "description": "The application title"
+  },
+  "availableDevices": "Available Devices",
+  "@availableDevices": {
+    "description": "Header for list of available devices"
+  },
+  "noDevicesFound": "No devices found",
+  "@noDevicesFound": {
+    "description": "Message when no devices are discovered"
+  },
+  "devicesWillAppearHere": "Devices on the same network will appear here",
+  "@devicesWillAppearHere": {
+    "description": "Hint message for device discovery"
+  },
+  "send": "Send",
+  "@send": {
+    "description": "Button to send files"
+  },
+  "receive": "Receive",
+  "@receive": {
+    "description": "Button to receive files"
+  },
+  "selectFiles": "Select Files",
+  "@selectFiles": {
+    "description": "Button to select files"
+  },
+  "selectPhotos": "Select Photos",
+  "@selectPhotos": {
+    "description": "Button to select photos"
+  },
+  "transferQueue": "Transfer Queue",
+  "@transferQueue": {
+    "description": "Header for transfer queue"
+  },
+  "noActiveTransfers": "No active transfers",
+  "@noActiveTransfers": {
+    "description": "Message when no transfers are active"
+  },
+  "settings": "Settings",
+  "@settings": {
+    "description": "Settings menu item"
+  },
+  "deviceName": "Device Name",
+  "@deviceName": {
+    "description": "Label for device name setting"
+  },
+  "streamCount": "Stream Count",
+  "@streamCount": {
+    "description": "Label for stream count setting"
+  },
+  "auto": "Auto",
+  "@auto": {
+    "description": "Auto option for stream count"
+  },
+  "language": "Language",
+  "@language": {
+    "description": "Label for language setting"
+  },
+  "notifications": "Notifications",
+  "@notifications": {
+    "description": "Label for notifications setting"
+  },
+  "keepAwake": "Keep Device Awake",
+  "@keepAwake": {
+    "description": "Label for keep awake setting"
+  },
+  "autoConfigureHotspot": "Auto-Configure Hotspot",
+  "@autoConfigureHotspot": {
+    "description": "Label for hotspot setting"
+  },
+  "verifyConnection": "Verify Connection",
+  "@verifyConnection": {
+    "description": "Title for verification dialog"
+  },
+  "verificationMessage": "Make sure this code appears on both devices:",
+  "@verificationMessage": {
+    "description": "Message in verification dialog"
+  },
+  "accept": "Accept",
+  "@accept": {
+    "description": "Button to accept verification"
+  },
+  "reject": "Reject",
+  "@reject": {
+    "description": "Button to reject verification"
+  },
+  "pause": "Pause",
+  "@pause": {
+    "description": "Button to pause transfer"
+  },
+  "resume": "Resume",
+  "@resume": {
+    "description": "Button to resume transfer"
+  },
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "Button to cancel transfer"
+  },
+  "transferComplete": "Transfer Complete",
+  "@transferComplete": {
+    "description": "Notification title for completed transfer"
+  },
+  "transferFailed": "Transfer Failed",
+  "@transferFailed": {
+    "description": "Notification title for failed transfer"
+  },
+  "selectDevice": "Select a device",
+  "@selectDevice": {
+    "description": "Prompt to select device"
+  },
+  "trusted": "Trusted",
+  "@trusted": {
+    "description": "Label for trusted device"
+  },
+  "notVerified": "Not verified",
+  "@notVerified": {
+    "description": "Label for unverified device"
+  }
+}

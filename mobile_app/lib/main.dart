@@ -1,41 +1,57 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:provider/provider.dart';
+import 'screens/home_screen.dart';
+import 'services/device_manager.dart';
+import 'services/transfer_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const StarterApp());
+  
+  // Initialize services
+  final deviceManager = DeviceManager();
+  await deviceManager.init();
+  
+  final transferService = TransferService(deviceManager);
+  await transferService.init();
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: deviceManager),
+        ChangeNotifierProvider.value(value: transferService),
+      ],
+      child: const RapidTransferApp(),
+    ),
+  );
 }
 
-class StarterApp extends StatelessWidget {
-  const StarterApp({super.key});
+class RapidTransferApp extends StatelessWidget {
+  const RapidTransferApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Starter App',
+      title: 'Rapid Transfer',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2D5BFF)),
         useMaterial3: true,
-      ),
-      home: const HomePage(),
-      debugShowCheckedModeBanner: false,
-    );
-  }
-}
-
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Starter App')),
-      body: const Center(
-        child: Text(
-          'Hello from the Flutter Android Starter!',
-          style: TextStyle(fontSize: 18),
-          textAlign: TextAlign.center,
+        appBarTheme: const AppBarTheme(
+          centerTitle: true,
+          elevation: 0,
         ),
       ),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en', ''), // English
+        Locale('id', ''), // Indonesian
+      ],
+      home: const HomeScreen(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
