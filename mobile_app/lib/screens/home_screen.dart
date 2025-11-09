@@ -6,6 +6,7 @@ import '../widgets/device_list.dart';
 import '../widgets/transfer_queue.dart';
 import '../utils/file_selection_helper.dart';
 import '../utils/permission_helper.dart';
+import '../utils/battery_monitor.dart';
 import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -136,6 +137,32 @@ class _HomeScreenState extends State<HomeScreen> {
     // Check permissions first
     final hasPermissions = await PermissionHelper.checkAndRequestPermissions(context);
     if (!hasPermissions || !context.mounted) return;
+    
+    // Check battery level
+    final shouldWarn = await BatteryMonitor.shouldWarnLowBattery();
+    if (shouldWarn && context.mounted) {
+      final proceed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Low Battery'),
+          content: const Text(
+            'Battery is low. It\'s recommended to connect to a charger before starting large transfers. Continue anyway?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Continue'),
+            ),
+          ],
+        ),
+      );
+      
+      if (proceed != true || !context.mounted) return;
+    }
     
     final transferService = Provider.of<TransferService>(context, listen: false);
     
