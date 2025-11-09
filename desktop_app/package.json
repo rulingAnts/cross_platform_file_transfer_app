@@ -16,8 +16,9 @@
     "electron",
     "cross-platform"
   ],
-  "author": "Rapid Transfer Team",
-  "license": "MIT",
+  "author": "Seth Johnston",
+  "license": "AGPL-3.0",
+  "copyright": "Copyright (C) 2025 Seth Johnston",
   "dependencies": {
     "archiver": "^7.0.1",
     "bonjour-service": "^1.2.1",

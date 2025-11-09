@@ -3,6 +3,11 @@ description: "Rapid File Transfer Mobile App"
 publish_to: 'none'
 version: 0.1.0+1
 
+# License and copyright
+homepage: https://github.com/rulingAnts/cross_platform_file_transfer_app
+repository: https://github.com/rulingAnts/cross_platform_file_transfer_app
+# AGPL-3.0 License - Copyright (C) 2025 Seth Johnston
+
 environment:
   sdk: ^3.9.2
 

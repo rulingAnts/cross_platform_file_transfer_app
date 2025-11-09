@@ -68,10 +68,22 @@ Icons are referenced in `AndroidManifest.xml`:
 <application
     android:icon="@mipmap/ic_launcher"
     android:roundIcon="@mipmap/ic_launcher_round"
+    android:label="@string/app_name"
     ...>
 ```
 
-No additional configuration needed - Flutter picks them up automatically.
+Launcher icons are automatically included in both debug and release APK builds.
+
+**Localized App Names:**
+- English: "Rapid Transfer" (`res/values/strings.xml`)
+- Indonesian: "Transfer Cepat" (`res/values-id/strings.xml`)
+
+The system automatically displays the correct name based on device language.
+
+**Adaptive Icons (Android 8.0+):**
+- Defined in `res/mipmap-anydpi-v26/ic_launcher.xml`
+- Uses foreground PNGs + gradient background drawable
+- Supports various shapes (circle, squircle, rounded square) based on device manufacturer
 
 ## Customization
 

@@ -1,3 +1,8 @@
+/**
+ * Rapid Transfer - Transfer Service (TLS/TCP)
+ * Copyright (C) 2025 Seth Johnston - Licensed under AGPL-3.0
+ */
+
 import 'dart:async';
 import 'dart:io';
 import 'dart:convert';

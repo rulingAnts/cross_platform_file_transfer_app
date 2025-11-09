@@ -1,3 +1,8 @@
+/**
+ * Rapid Transfer - Desktop Application (Electron Preload)
+ * Copyright (C) 2025 Seth Johnston - Licensed under AGPL-3.0
+ */
+
 const { contextBridge, ipcRenderer } = require('electron');
 
 // Expose protected methods that allow the renderer process to use

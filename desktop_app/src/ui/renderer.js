@@ -1,3 +1,8 @@
+/**
+ * Rapid Transfer - Desktop Application UI (Renderer Process)
+ * Copyright (C) 2025 Seth Johnston - Licensed under AGPL-3.0
+ */
+
 // Renderer process
 let devices = new Map();
 let selectedDevices = new Set();

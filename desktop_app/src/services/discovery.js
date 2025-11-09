@@ -1,3 +1,8 @@
+/**
+ * Rapid Transfer - Discovery Service (mDNS/Bonjour)
+ * Copyright (C) 2025 Seth Johnston - Licensed under AGPL-3.0
+ */
+
 const Bonjour = require('bonjour-service');
 const os = require('os');
 

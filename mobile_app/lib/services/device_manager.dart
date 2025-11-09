@@ -1,3 +1,8 @@
+/**
+ * Rapid Transfer - Device Manager
+ * Copyright (C) 2025 Seth Johnston - Licensed under AGPL-3.0
+ */
+
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,7 +14,7 @@ class DeviceManager extends ChangeNotifier {
   String _localDeviceName = '';
   Map<String, String> _deviceAliases = {};
   Set<String> _trustedDevices = {};
-  
+
   // Settings
   String _streamCount = 'auto';
   String _language = 'en';
@@ -37,18 +42,18 @@ class DeviceManager extends ChangeNotifier {
       _localDeviceId = _generateDeviceId();
       await prefs.setString('deviceId', _localDeviceId!);
     }
-    
+
     _localDeviceName = prefs.getString('deviceName') ?? 'Android Device';
     _streamCount = prefs.getString('streamCount') ?? 'auto';
     _language = prefs.getString('language') ?? 'en';
     _notifications = prefs.getBool('notifications') ?? true;
     _keepAwake = prefs.getBool('keepAwake') ?? true;
     _autoConfigureHotspot = prefs.getBool('autoConfigureHotspot') ?? true;
-    
+
     // Load trusted devices
     final trustedList = prefs.getStringList('trustedDevices') ?? [];
     _trustedDevices = trustedList.toSet();
-    
+
     // Load aliases
     final aliasKeys = prefs.getKeys().where((k) => k.startsWith('alias_'));
     for (final key in aliasKeys) {
@@ -136,7 +141,7 @@ class DeviceManager extends ChangeNotifier {
     bool? autoConfigureHotspot,
   }) async {
     final prefs = await SharedPreferences.getInstance();
-    
+
     if (streamCount != null) {
       _streamCount = streamCount;
       await prefs.setString('streamCount', streamCount);
@@ -157,7 +162,7 @@ class DeviceManager extends ChangeNotifier {
       _autoConfigureHotspot = autoConfigureHotspot;
       await prefs.setBool('autoConfigureHotspot', autoConfigureHotspot);
     }
-    
+
     notifyListeners();
   }
 
