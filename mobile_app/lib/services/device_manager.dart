@@ -19,6 +19,7 @@ class DeviceManager extends ChangeNotifier {
 
   List<Device> get devices => _devices.values.toList();
   String get localDeviceName => _localDeviceName;
+  String? getLocalDeviceId() => _localDeviceId;
   String get streamCount => _streamCount;
   String get language => _language;
   bool get notifications => _notifications;
@@ -27,7 +28,6 @@ class DeviceManager extends ChangeNotifier {
 
   Future<void> init() async {
     await _loadConfig();
-    // TODO: Start discovery service
   }
 
   Future<void> _loadConfig() async {
@@ -162,7 +162,6 @@ class DeviceManager extends ChangeNotifier {
   }
 
   void dispose() {
-    // TODO: Stop discovery service
     super.dispose();
   }
 }

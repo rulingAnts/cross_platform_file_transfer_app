@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'screens/home_screen.dart';
 import 'services/device_manager.dart';
 import 'services/transfer_service.dart';
+import 'services/discovery_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -11,6 +12,9 @@ void main() async {
   // Initialize services
   final deviceManager = DeviceManager();
   await deviceManager.init();
+  
+  final discoveryService = DiscoveryService(deviceManager);
+  await discoveryService.start();
   
   final transferService = TransferService(deviceManager);
   await transferService.init();
@@ -20,6 +24,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider.value(value: deviceManager),
         ChangeNotifierProvider.value(value: transferService),
+        Provider.value(value: discoveryService),
       ],
       child: const RapidTransferApp(),
     ),

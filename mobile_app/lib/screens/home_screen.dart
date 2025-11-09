@@ -4,6 +4,8 @@ import '../services/device_manager.dart';
 import '../services/transfer_service.dart';
 import '../widgets/device_list.dart';
 import '../widgets/transfer_queue.dart';
+import '../utils/file_selection_helper.dart';
+import '../utils/permission_helper.dart';
 import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -131,14 +133,58 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _selectAndSendFiles(BuildContext context) async {
-    // TODO: Implement file picker
-    // For now, just show a placeholder
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Selected ${_selectedDevices.length} device(s). File picker to be implemented.',
+    // Check permissions first
+    final hasPermissions = await PermissionHelper.checkAndRequestPermissions(context);
+    if (!hasPermissions || !context.mounted) return;
+    
+    final transferService = Provider.of<TransferService>(context, listen: false);
+    
+    // Show selection dialog
+    final selection = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Select Source'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.insert_drive_file),
+              title: const Text('Files & Folders'),
+              onTap: () => Navigator.pop(context, 'files'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Photos & Videos'),
+              onTap: () => Navigator.pop(context, 'photos'),
+            ),
+          ],
         ),
       ),
     );
+    
+    if (selection == null || !context.mounted) return;
+    
+    List<String>? filePaths;
+    
+    if (selection == 'files') {
+      filePaths = await FileSelectionHelper.pickFiles();
+    } else if (selection == 'photos') {
+      filePaths = await FileSelectionHelper.pickImages();
+    }
+    
+    if (filePaths != null && filePaths.isNotEmpty && context.mounted) {
+      await transferService.sendFiles(
+        _selectedDevices.toList(),
+        filePaths,
+      );
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Sending ${filePaths.length} file(s) to ${_selectedDevices.length} device(s)',
+          ),
+        ),
+      );
+    }
   }
 }
