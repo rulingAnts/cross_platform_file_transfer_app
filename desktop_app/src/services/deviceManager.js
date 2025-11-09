@@ -3,6 +3,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const os = require('os');
 const crypto = require('crypto');
+const CertificateManager = require('./certificateManager');
 
 class DeviceManager extends EventEmitter {
   constructor() {
@@ -12,6 +13,7 @@ class DeviceManager extends EventEmitter {
     this.localDeviceName = os.hostname();
     this.trustedDevices = new Map();
     this.deviceAliases = new Map();
+    this.certificateManager = new CertificateManager();
     this.settings = {
       streamCount: 'auto',
       language: 'en',
@@ -28,6 +30,7 @@ class DeviceManager extends EventEmitter {
   async init() {
     try {
       await fs.mkdir(this.configPath, { recursive: true });
+      await this.certificateManager.initialize();
       await this.loadConfig();
     } catch (err) {
       console.error('Failed to initialize device manager:', err);

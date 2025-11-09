@@ -9,8 +9,10 @@ import 'package:flutter_archive/flutter_archive.dart';
 import '../models/device.dart';
 import '../models/transfer.dart';
 import '../models/transfer_manifest.dart';
+import '../models/transfer_history.dart';
 import '../utils/wake_lock_helper.dart';
 import 'device_manager.dart';
+import 'transfer_history_manager.dart';
 
 class TransferService extends ChangeNotifier {
   final DeviceManager deviceManager;
@@ -322,12 +324,16 @@ Er+1cWM0MTLerxnZEN5ehb6i8UBaiZvMUMSdGLT8SamWNsSdGLXsSamWNsSdGLT
       }
       
       // Update transfer status
+      final completedAt = DateTime.now();
       _transfers[transfer.id] = transfer.copyWith(
         status: TransferStatus.completed,
         progress: 100,
-        completedAt: DateTime.now(),
+        completedAt: completedAt,
       );
       notifyListeners();
+      
+      // Add to history
+      await _addToHistory(transfer, completedAt, true, null);
       
       // Clean up temp directory
       await Directory(transfer.filePath).delete(recursive: true).catchError((_) {});
@@ -335,11 +341,70 @@ Er+1cWM0MTLerxnZEN5ehb6i8UBaiZvMUMSdGLT8SamWNsSdGLXsSamWNsSdGLT
       debugPrint('Transfer complete: ${transfer.fileName}');
     } catch (e) {
       debugPrint('Error finalizing transfer: $e');
-      _transfers[transfer.id] = transfer.copyWith(
+      final failedTransfer = transfer.copyWith(
         status: TransferStatus.failed,
         error: e.toString(),
       );
+      _transfers[transfer.id] = failedTransfer;
       notifyListeners();
+      
+      // Add failed transfer to history
+      await _addToHistory(failedTransfer, DateTime.now(), false, e.toString());
+    }
+  }
+  
+  Future<void> _addToHistory(
+    FileTransfer transfer,
+    DateTime completedAt,
+    bool successful,
+    String? errorMessage,
+  ) async {
+    try {
+      // Determine direction
+      final direction = transfer.deviceId == 'incoming'
+          ? TransferDirection.receiving
+          : TransferDirection.sending;
+      
+      // Get device name
+      Device? device;
+      if (transfer.deviceId != 'incoming') {
+        device = deviceManager.devices.firstWhere(
+          (d) => d.id == transfer.deviceId,
+          orElse: () => Device(
+            id: transfer.deviceId,
+            name: 'Unknown Device',
+            platform: 'unknown',
+            address: '',
+            port: 0,
+          ),
+        );
+      }
+      
+      // Calculate average speed
+      final duration = completedAt.difference(transfer.startedAt ?? completedAt);
+      final avgSpeed = duration.inSeconds > 0
+          ? (transfer.bytesTransferred ?? 0) / duration.inSeconds
+          : 0.0;
+      
+      // Create history entry
+      final history = TransferHistory(
+        id: transfer.id,
+        fileName: transfer.fileName,
+        fileSize: transfer.size,
+        deviceId: transfer.deviceId,
+        deviceName: device?.name ?? 'Unknown',
+        direction: direction,
+        completedAt: completedAt,
+        duration: duration,
+        bytesTransferred: transfer.bytesTransferred ?? 0,
+        averageSpeed: avgSpeed,
+        successful: successful,
+        errorMessage: errorMessage,
+      );
+      
+      await TransferHistoryManager.addTransfer(history);
+    } catch (e) {
+      debugPrint('Error adding to history: $e');
     }
   }
 
@@ -457,12 +522,16 @@ Er+1cWM0MTLerxnZEN5ehb6i8UBaiZvMUMSdGLT8SamWNsSdGLXsSamWNsSdGLT
       await _sendFileChunks(socket, fileToSend, transfer);
       
       // Mark complete
+      final completedAt = DateTime.now();
       _transfers[transfer.id] = transfer.copyWith(
         status: TransferStatus.completed,
         progress: 100,
-        completedAt: DateTime.now(),
+        completedAt: completedAt,
       );
       notifyListeners();
+      
+      // Add to history
+      await _addToHistory(transfer, completedAt, true, null);
       
       // Cleanup
       await transferTempDir.delete(recursive: true).catchError((_) {});
