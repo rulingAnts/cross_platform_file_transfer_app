@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rapid Transfer - UI Preview</title>
+  <link rel="stylesheet" href="../src/ui/styles.css">
+  <style>
+    body { padding: 0; margin: 0; }
+    .preview-note {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: #FFF3CD;
+      border: 1px solid #FFC107;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      z-index: 9999;
+    }
+  </style>
+</head>
+<body>
+  <div class="preview-note">UI Preview - Non-functional Demo</div>
+  
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <h1>
+        <svg class="logo-icon" width="32" height="32" viewBox="0 0 32 32">
+          <circle cx="16" cy="16" r="14" fill="#2D5BFF"/>
+          <path d="M12 10 L20 16 L12 22 Z" fill="white"/>
+        </svg>
+        Rapid Transfer
+      </h1>
+      <div class="header-actions">
+        <span class="device-name">My Android Phone</span>
+        <button class="icon-btn" title="Settings">
+          <svg width="20" height="20" viewBox="0 0 20 20">
+            <path d="M10 6a4 4 0 100 8 4 4 0 000-8zm0 6a2 2 0 110-4 2 2 0 010 4z"/>
+            <path d="M10 2a1 1 0 00-1 1v1.07A7 7 0 004.07 9H3a1 1 0 000 2h1.07A7 7 0 009 15.93V17a1 1 0 002 0v-1.07A7 7 0 0015.93 11H17a1 1 0 000-2h-1.07A7 7 0 0011 4.07V3a1 1 0 00-1-1z"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main content -->
+    <main class="app-main">
+      <!-- Devices panel -->
+      <section class="devices-panel">
+        <h2>Available Devices</h2>
+        <div class="devices-list">
+          <!-- Sample Device 1 -->
+          <div class="device-card selected">
+            <div class="device-info">
+              <div class="device-name-text">MacBook Pro</div>
+              <div class="device-details">darwin • 🔒 Trusted</div>
+            </div>
+          </div>
+          
+          <!-- Sample Device 2 -->
+          <div class="device-card">
+            <div class="device-info">
+              <div class="device-name-text">Windows Desktop</div>
+              <div class="device-details">win32 • Not verified</div>
+            </div>
+          </div>
+          
+          <!-- Sample Device 3 -->
+          <div class="device-card">
+            <div class="device-info">
+              <div class="device-name-text">Samsung Galaxy</div>
+              <div class="device-details">android • 🔒 Trusted</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Drop zone -->
+      <section class="drop-zone-panel">
+        <div class="drop-zone">
+          <svg width="80" height="80" viewBox="0 0 80 80">
+            <path d="M40 20 L40 60 M20 40 L60 40" stroke="#2D5BFF" stroke-width="4" stroke-linecap="round"/>
+            <circle cx="40" cy="40" r="35" stroke="#2D5BFF" stroke-width="2" fill="none" stroke-dasharray="5,5"/>
+          </svg>
+          <h3>Drop files here</h3>
+          <p>or click to browse</p>
+          <p class="hint">MacBook Pro selected</p>
+        </div>
+      </section>
+
+      <!-- Transfer queue -->
+      <section class="transfers-panel">
+        <h2>
+          Transfer Queue
+          <span class="queue-stats">2 / 3</span>
+        </h2>
+        <div class="transfers-list">
+          <!-- Transfer 1 - Completed -->
+          <div class="transfer-item">
+            <div class="transfer-header">
+              <div class="transfer-filename">vacation_photos.zip</div>
+              <div class="transfer-actions">
+                <button>✓</button>
+              </div>
+            </div>
+            <div class="transfer-progress">
+              <div class="progress-bar">
+                <div class="progress-fill success" style="width: 100%"></div>
+              </div>
+            </div>
+            <div class="transfer-stats">
+              <span>completed</span>
+              <span>100%</span>
+            </div>
+          </div>
+          
+          <!-- Transfer 2 - In Progress -->
+          <div class="transfer-item">
+            <div class="transfer-header">
+              <div class="transfer-filename">presentation.pdf</div>
+              <div class="transfer-actions">
+                <button>⏸</button>
+                <button>✕</button>
+              </div>
+            </div>
+            <div class="transfer-progress">
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: 67%"></div>
+              </div>
+            </div>
+            <div class="transfer-stats">
+              <span>transferring • 5.2 MB/s</span>
+              <span>67%</span>
+            </div>
+          </div>
+          
+          <!-- Transfer 3 - Pending -->
+          <div class="transfer-item">
+            <div class="transfer-header">
+              <div class="transfer-filename">video_project.mp4</div>
+              <div class="transfer-actions">
+                <button>✕</button>
+              </div>
+            </div>
+            <div class="transfer-progress">
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: 0%"></div>
+              </div>
+            </div>
+            <div class="transfer-stats">
+              <span>pending</span>
+              <span>0%</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

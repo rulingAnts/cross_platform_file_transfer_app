@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - Rapid Transfer</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .privacy-content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 80px 24px;
+        }
+        .privacy-content h1 {
+            font-size: 40px;
+            margin-bottom: 16px;
+        }
+        .privacy-content h2 {
+            font-size: 28px;
+            margin-top: 48px;
+            margin-bottom: 16px;
+            text-align: left;
+        }
+        .privacy-content h3 {
+            font-size: 20px;
+            margin-top: 32px;
+            margin-bottom: 12px;
+        }
+        .privacy-content p, .privacy-content li {
+            color: var(--gray);
+            line-height: 1.8;
+            margin-bottom: 16px;
+        }
+        .privacy-content ul {
+            margin-left: 24px;
+        }
+        .last-updated {
+            color: var(--gray);
+            font-size: 14px;
+            margin-bottom: 48px;
+        }
+        .highlight-box {
+            background: var(--light-gray);
+            padding: 24px;
+            border-radius: var(--radius);
+            margin: 32px 0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="container">
+                <a href="index.html" class="logo">
+                    <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="20" cy="20" r="18" fill="#4285F4"/>
+                        <path d="M20 10L28 20L20 30M12 20H28" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>Rapid Transfer</span>
+                </a>
+                <ul class="nav-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="index.html#download">Download</a></li>
+                    <li><a href="https://github.com/rulingAnts/cross_platform_file_transfer_app">GitHub</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <div class="privacy-content">
+        <h1>Privacy Policy</h1>
+        <p class="last-updated">Last updated: January 2024</p>
+
+        <div class="highlight-box">
+            <h3>🔒 TL;DR - Your Privacy is Guaranteed</h3>
+            <p><strong>Rapid Transfer collects ZERO user data.</strong> All file transfers happen directly between your devices on your local network. We don't have servers, we don't track you, and we never see your files.</p>
+        </div>
+
+        <h2>Overview</h2>
+        <p>Rapid Transfer is an open-source, privacy-first file transfer application. This privacy policy explains how the application works and what data it does (and doesn't) collect.</p>
+
+        <h2>Data Collection</h2>
+        <h3>What We DON'T Collect</h3>
+        <ul>
+            <li><strong>Personal Information:</strong> No names, emails, phone numbers, or accounts required</li>
+            <li><strong>File Content:</strong> Your files never touch our servers (we don't have any!)</li>
+            <li><strong>Usage Analytics:</strong> No tracking, no telemetry, no analytics</li>
+            <li><strong>Crash Reports:</strong> No automatic error reporting</li>
+            <li><strong>Device Information:</strong> No collection of device specs or identifiers</li>
+            <li><strong>Location Data:</strong> No GPS or location tracking</li>
+            <li><strong>Network Activity:</strong> No logging of transfers or connections</li>
+        </ul>
+
+        <h3>What Data Stays on Your Device</h3>
+        <p>The following data is stored locally on your device and never transmitted to us:</p>
+        <ul>
+            <li><strong>Device Name:</strong> Your chosen device name (stored locally)</li>
+            <li><strong>Trusted Devices:</strong> List of devices you've previously connected to (stored locally)</li>
+            <li><strong>Transfer History:</strong> Records of past transfers (stored locally, can be cleared)</li>
+            <li><strong>App Settings:</strong> Your preferences (language, stream count, etc.)</li>
+            <li><strong>TLS Certificates:</strong> Device certificates for secure connections (stored locally)</li>
+        </ul>
+
+        <h2>How Transfers Work</h2>
+        <h3>Direct Device-to-Device</h3>
+        <p>All file transfers happen directly between your devices on your local network:</p>
+        <ul>
+            <li>Devices discover each other using mDNS/Bonjour (standard local network protocol)</li>
+            <li>Files are encrypted with TLS 1.3 and sent directly between devices</li>
+            <li>No internet connection required (except for device discovery)</li>
+            <li>Files never pass through any third-party servers</li>
+        </ul>
+
+        <h3>Cloud Relay (Optional)</h3>
+        <p>If you choose to set up the optional cloud relay feature:</p>
+        <ul>
+            <li>You control the relay server (self-hosted or your chosen provider)</li>
+            <li>Files are end-to-end encrypted before being uploaded</li>
+            <li>Files are automatically deleted after download</li>
+            <li>We have no access to your relay server or files</li>
+        </ul>
+
+        <h2>Network Permissions</h2>
+        <p>Rapid Transfer requires the following permissions to function:</p>
+        <ul>
+            <li><strong>Network Access:</strong> To discover devices and transfer files</li>
+            <li><strong>Local Network (iOS/macOS):</strong> To use Bonjour for device discovery</li>
+            <li><strong>Storage (Android):</strong> To read and write files you want to transfer</li>
+            <li><strong>Location (Android):</strong> Required by Android for WiFi Direct and hotspot features (not used for actual location tracking)</li>
+            <li><strong>Notifications:</strong> To notify you when transfers complete</li>
+        </ul>
+
+        <h2>Open Source</h2>
+        <p>Rapid Transfer is 100% open source (MIT License). You can:</p>
+        <ul>
+            <li>Review the source code on <a href="https://github.com/rulingAnts/cross_platform_file_transfer_app">GitHub</a></li>
+            <li>Verify that no data collection occurs</li>
+            <li>Build the app yourself from source</li>
+            <li>Audit the security and privacy features</li>
+        </ul>
+
+        <h2>Third-Party Services</h2>
+        <p>Rapid Transfer does not use any third-party analytics, advertising, or tracking services. The only external connections are:</p>
+        <ul>
+            <li>GitHub (if you download updates - optional)</li>
+            <li>Your self-hosted cloud relay server (if you configure it - optional)</li>
+        </ul>
+
+        <h2>Security</h2>
+        <h3>Encryption</h3>
+        <ul>
+            <li>All transfers use TLS 1.3 encryption (military-grade)</li>
+            <li>Certificate pinning prevents man-in-the-middle attacks</li>
+            <li>SHA-256 checksums verify data integrity</li>
+        </ul>
+
+        <h3>Local Data Storage</h3>
+        <ul>
+            <li>Settings and history stored in standard OS-protected locations</li>
+            <li>Desktop: <code>~/.rapidtransfer/</code> (protected by user permissions)</li>
+            <li>Mobile: App-specific storage (protected by Android sandbox)</li>
+        </ul>
+
+        <h2>Children's Privacy</h2>
+        <p>Rapid Transfer does not collect any data from anyone, including children under 13. The app can be safely used by users of all ages.</p>
+
+        <h2>Changes to This Policy</h2>
+        <p>Since we don't collect data, this policy is unlikely to change. Any updates will be posted on this page and in the app's GitHub repository.</p>
+
+        <h2>Contact</h2>
+        <p>For questions about privacy or security, please:</p>
+        <ul>
+            <li>Open an issue on <a href="https://github.com/rulingAnts/cross_platform_file_transfer_app/issues">GitHub</a></li>
+            <li>Review the source code for verification</li>
+        </ul>
+
+        <div class="highlight-box">
+            <h3>✅ Bottom Line</h3>
+            <p><strong>Your data is yours.</strong> Rapid Transfer is designed to be completely private. We can't see your files because they never leave your network. We can't track you because we don't have servers. We can't sell your data because we don't collect any.</p>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2024 Rapid Transfer. Open source software under MIT License.</p>
+                <p><a href="index.html">Home</a> • <a href="privacy.html">Privacy Policy</a> • <a href="https://github.com/rulingAnts/cross_platform_file_transfer_app">GitHub</a></p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
