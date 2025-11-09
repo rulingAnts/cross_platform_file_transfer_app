@@ -7,6 +7,7 @@ const crypto = require('crypto');
 const { pipeline } = require('stream/promises');
 const archiver = require('archiver');
 const tar = require('tar');
+const NetworkMonitor = require('./networkMonitor');
 
 class TransferService extends EventEmitter {
   constructor(deviceManager) {
@@ -18,6 +19,7 @@ class TransferService extends EventEmitter {
     this.connections = new Map();
     this.verificationCodes = new Map();
     this.tempDir = null;
+    this.networkMonitor = new NetworkMonitor();
   }
 
   async start() {
@@ -414,27 +416,43 @@ class TransferService extends EventEmitter {
       });
     };
     
-    // Send chunks with parallelism
-    const sendBatch = async (batchStart, batchSize) => {
+    // Send chunks with parallelism and retry logic
+    const sendBatch = async (batchStart, batchSize, maxRetries = 3) => {
       const promises = [];
       
       for (let i = 0; i < batchSize && (batchStart + i) < totalChunks; i++) {
         const idx = batchStart + i;
         
         promises.push((async () => {
-          const chunk = await readChunk(idx);
-          const chunkHash = crypto.createHash('sha256').update(chunk).digest('hex');
+          let retryCount = 0;
           
-          await this.sendChunkData(socket, {
-            transferId: transfer.id,
-            chunkIndex: idx,
-            data: chunk.toString('base64'),
-            checksum: chunkHash
-          });
-          
-          await this.waitForChunkAck(socket, idx, 5000);
-          
-          return chunk.length;
+          while (retryCount < maxRetries) {
+            try {
+              const chunk = await readChunk(idx);
+              const chunkHash = crypto.createHash('sha256').update(chunk).digest('hex');
+              
+              await this.sendChunkData(socket, {
+                transferId: transfer.id,
+                chunkIndex: idx,
+                data: chunk.toString('base64'),
+                checksum: chunkHash
+              });
+              
+              await this.waitForChunkAck(socket, idx, 5000);
+              
+              return chunk.length;
+            } catch (error) {
+              retryCount++;
+              console.error(`Chunk ${idx} failed (attempt ${retryCount}/${maxRetries}):`, error.message);
+              
+              if (retryCount >= maxRetries) {
+                throw new Error(`Chunk ${idx} failed after ${maxRetries} retries`);
+              }
+              
+              // Wait before retry with exponential backoff
+              await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+            }
+          }
         })());
       }
       
@@ -442,17 +460,33 @@ class TransferService extends EventEmitter {
       return sizes.reduce((a, b) => a + b, 0);
     };
     
-    // Process chunks in parallel batches
-    for (let batch = 0; batch < totalChunks; batch += streamCount) {
-      const sent = await sendBatch(batch, Math.min(streamCount, totalChunks - batch));
+    // Process chunks in parallel batches with dynamic adjustment
+    let currentStreamCount = streamCount;
+    this.networkMonitor.reset();
+    
+    for (let batch = 0; batch < totalChunks; batch += currentStreamCount) {
+      const batchStart = Date.now();
+      const sent = await sendBatch(batch, Math.min(currentStreamCount, totalChunks - batch));
+      const batchTime = (Date.now() - batchStart) / 1000;
       
       totalSent += sent;
-      transfer.sentChunks = batch + streamCount;
+      transfer.sentChunks = batch + currentStreamCount;
       
       // Update progress
       transfer.progress = (totalSent / fileSize) * 100;
       const elapsed = (Date.now() - startTime) / 1000;
       transfer.speed = totalSent / elapsed;
+      
+      // Record speed for dynamic adjustment
+      this.networkMonitor.recordSpeed(transfer.speed);
+      
+      // Check if we should adjust stream count
+      const adjustment = this.networkMonitor.shouldAdjustStreams(currentStreamCount);
+      if (adjustment.adjust && batch < totalChunks - currentStreamCount) {
+        console.log(`Adjusting streams: ${currentStreamCount} -> ${adjustment.newCount}`);
+        currentStreamCount = adjustment.newCount;
+        transfer.streamCount = currentStreamCount;
+      }
       
       this.emit('transfer-progress', transfer);
     }
