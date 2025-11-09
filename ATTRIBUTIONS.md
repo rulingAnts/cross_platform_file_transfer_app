@@ -27,10 +27,6 @@ This software was developed with significant assistance from:
   - https://github.com/electron/electron
 
 #### Networking & Discovery
-- **bonjour-service** (MIT License)
-  - mDNS/DNS-SD service discovery
-  - https://github.com/onlxltd/bonjour-service
-
 - **ws** (MIT License)
   - WebSocket client and server
   - https://github.com/websockets/ws
@@ -57,10 +53,6 @@ This software was developed with significant assistance from:
   - https://github.com/flutter/flutter
 
 #### Network & Discovery
-- **nsd** (BSD-3-Clause License)
-  - Network Service Discovery for Flutter
-  - https://github.com/sebastianhaberey/nsd
-
 - **http** (BSD-3-Clause License)
   - HTTP client for Dart
   - https://pub.dev/packages/http

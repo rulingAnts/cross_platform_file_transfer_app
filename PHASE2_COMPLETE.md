@@ -78,8 +78,8 @@ Phase 2 of the Rapid Transfer project has been successfully completed, deliverin
 
 ```
 1. Discovery Phase
-   Device A broadcasts: _rapidtransfer._tcp.local.
-   Device B discovers and resolves service
+   Device A broadcasts: UDP message on port 8766 (JSON format)
+   Device B discovers by listening on port 8766
    
 2. Connection Phase
    Device B → TLS connect → Device A
@@ -206,14 +206,14 @@ Based on file size:
 ## Integration Points
 
 ### Desktop → Mobile
-- Desktop publishes mDNS service
-- Mobile discovers via NSD
+- Desktop publishes UDP broadcast
+- Mobile discovers via UDP socket
 - Mobile connects via TLS
 - Mobile sends files to Desktop
 
 ### Mobile → Desktop
-- Mobile publishes NSD service
-- Desktop discovers via Bonjour
+- Mobile publishes UDP broadcast
+- Desktop discovers via UDP socket
 - Desktop connects via TLS
 - Desktop sends files to Mobile
 - (Receiving on mobile to be implemented)

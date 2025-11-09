@@ -5,7 +5,7 @@ A fast, secure, and easy-to-use file transfer application for local networks, su
 ## Overview
 
 Rapid Transfer enables seamless file sharing between devices on the same local network with:
-- **Zero configuration** - automatic device discovery using mDNS/Bonjour
+- **Zero configuration** - automatic device discovery using UDP broadcast
 - **Fast transfers** - multi-stream parallel connections for maximum speed
 - **Secure** - TLS 1.3 encryption with device verification
 - **Resume capability** - interrupted transfers can be resumed
@@ -106,13 +106,16 @@ Or use the provided scripts:
 ## Network Architecture
 
 ### Discovery
-- **Protocol**: mDNS/Bonjour
-- **Service type**: `_rapidtransfer._tcp.local.`
-- **Broadcast**: Device name, ID, platform, version
-- **Works out-of-box** on Windows 11, macOS, Android
+- **Protocol**: UDP Broadcast
+- **Port**: 8766 (discovery only)
+- **Broadcast**: Device name, ID, platform, version (JSON format)
+- **Frequency**: Every 5 seconds
+- **Timeout**: 30 seconds (devices not seen are removed)
+- **Works on ALL platforms** without any external dependencies
 
 ### Transfer Protocol
 - **Transport**: TCP with TLS 1.3
+- **Port**: 8765 (file transfers)
 - **Streams**: Dynamic (1-8 based on file size)
   - < 10 MB: 1 stream
   - 10-100 MB: 2 streams

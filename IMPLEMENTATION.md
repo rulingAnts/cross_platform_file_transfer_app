@@ -41,11 +41,12 @@ The desktop application features a polished, Material Design-inspired interface:
 Complete service layer implementation:
 
 **Discovery Service** (`src/services/discovery.js`)
-- mDNS/Bonjour integration using `bonjour-service`
-- Automatic device discovery on local network
-- Service publishing and browsing
-- Periodic cleanup of stale devices
-- Service type: `_rapidtransfer._tcp.local.`
+- UDP broadcast discovery on port 8766
+- Broadcasts device info every 5 seconds
+- Listens for broadcasts from other devices
+- Calculates broadcast addresses for network interfaces
+- Automatic cleanup of stale devices (30+ seconds)
+- No external dependencies (uses built-in Node.js dgram module)
 
 **Device Manager** (`src/services/deviceManager.js`)
 - Device registry and lifecycle management
@@ -66,7 +67,6 @@ Complete service layer implementation:
 ### Technical Stack
 - **Electron 32.2.7** - Desktop application framework
 - **Node.js 20+** - Runtime environment
-- **bonjour-service** - mDNS device discovery
 - **node-forge** - TLS/crypto operations
 - **archiver** - File compression
 - **tar** - Folder compression to .tar.gz
@@ -235,10 +235,12 @@ Both applications support English and Indonesian:
 ## Network Architecture (Prepared)
 
 ### Discovery Protocol
-- **mDNS/Bonjour** for zero-config discovery
-- Service type: `_rapidtransfer._tcp.local.`
-- Broadcasts: device name, ID, platform, version
-- Works out-of-box on Windows 11, macOS, Android
+- **UDP Broadcast** for zero-config discovery
+- **Port**: 8766 (discovery), 8765 (transfers)
+- Broadcasts: device name, ID, platform, version (JSON format)
+- Broadcast frequency: Every 5 seconds
+- Device timeout: 30 seconds (auto-cleanup)
+- Works on ALL platforms without external dependencies
 
 ### Transfer Protocol (Infrastructure Ready)
 - **TCP with TLS 1.3** encryption

@@ -10,10 +10,10 @@ Rapid Transfer is a peer-to-peer file transfer application designed for local ne
 ┌─────────────────────────────────────────────────────────────┐
 │                      Network Layer                           │
 │  ┌────────────────────────────────────────────────────────┐ │
-│  │  mDNS/Bonjour Discovery (_rapidtransfer._tcp.local.)  │ │
+│  │      UDP Broadcast Discovery (Port 8766)               │ │
 │  └────────────────────────────────────────────────────────┘ │
 │  ┌────────────────────────────────────────────────────────┐ │
-│  │         TLS 1.3 Encrypted TCP Connections              │ │
+│  │   TLS 1.3 Encrypted TCP Connections (Port 8765)        │ │
 │  └────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────┘
                             ▲ ▼
@@ -22,7 +22,7 @@ Rapid Transfer is a peer-to-peer file transfer application designed for local ne
 │  ┌──────────────────┐         ┌──────────────────┐          │
 │  │  Desktop (Node)  │◄───────►│ Mobile (Flutter) │          │
 │  │                  │         │                  │          │
-│  │ • Discovery      │         │ • NSD Discovery  │          │
+│  │ • UDP Discovery  │         │ • UDP Discovery  │          │
 │  │ • Transfer       │         │ • Transfer       │          │
 │  │ • Device Mgmt    │         │ • Device Mgmt    │          │
 │  │ • File Handling  │         │ • File Handling  │          │
@@ -54,11 +54,12 @@ Rapid Transfer is a peer-to-peer file transfer application designed for local ne
 #### Services
 
 **Discovery Service** (`src/services/discovery.js`)
-- Uses `bonjour-service` for mDNS
-- Publishes local service
-- Browses for other services
+- Uses Node.js `dgram` module for UDP broadcast
+- Broadcasts device info on port 8766 every 5 seconds
+- Listens for broadcasts from other devices
+- Calculates broadcast addresses for local network interfaces
+- Auto-cleanup of stale devices (30+ seconds)
 - Manages device list updates
-- Auto-cleanup of stale devices
 
 **Transfer Service** (`src/services/transfer.js`)
 - TLS server management

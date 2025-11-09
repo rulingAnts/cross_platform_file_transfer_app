@@ -31,7 +31,7 @@ desktop_app/
 │   ├── main.js                    # Main process, window management
 │   ├── preload.js                 # IPC bridge (secure context)
 │   ├── services/
-│   │   ├── discovery.js           # mDNS/Bonjour service
+│   │   ├── discovery.js           # UDP broadcast discovery
 │   │   ├── deviceManager.js       # Device trust & config
 │   │   ├── transfer.js            # File transfer protocol
 │   │   ├── certificateManager.js  # TLS cert pinning (TOFU)
@@ -40,7 +40,7 @@ desktop_app/
 │       ├── index.html             # Main window layout
 │       ├── renderer.js            # UI logic & IPC
 │       └── styles.css             # Material Design styling
-├── package.json                   # 15 dependencies
+├── package.json                   # 14 dependencies
 └── preview.html                   # Non-functional demo
 ```
 
@@ -163,11 +163,13 @@ mobile_app/
 
 ## 📡 Network Protocol
 
-### Discovery (mDNS/NSD)
-- Service type: `_rapidtransfer._tcp.local.`
-- Broadcast: Device name, ID, platform, version
+### Discovery (UDP Broadcast)
+- Port: 8766 (discovery), 8765 (transfers)
+- Broadcast format: JSON with device info
+- Broadcast frequency: Every 5 seconds
+- Device timeout: 30 seconds (auto-cleanup)
 - Auto-discovery on local network
-- No configuration required
+- No external dependencies or configuration required
 
 ### Message Protocol
 ```
@@ -183,7 +185,7 @@ mobile_app/
 - 0x06: CHUNK_ACK (chunk received OK)
 
 ### Transfer Flow
-1. Device discovery via mDNS/NSD
+1. Device discovery via UDP broadcast
 2. TLS handshake
 3. Certificate verification (or pinning on first use)
 4. TRANSFER_REQUEST with metadata
@@ -416,7 +418,7 @@ mobile_app/
 
 ## 💡 Key Innovations
 
-1. **Zero-Config**: mDNS/NSD auto-discovery
+1. **Zero-Config**: UDP broadcast auto-discovery
 2. **Multi-Stream**: Up to 6x faster than single stream
 3. **Dynamic Adjustment**: Auto-optimizes for network
 4. **TOFU Pinning**: Simple security like Bluetooth

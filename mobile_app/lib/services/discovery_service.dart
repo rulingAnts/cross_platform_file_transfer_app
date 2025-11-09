@@ -1,5 +1,5 @@
 /**
- * Rapid Transfer - Discovery Service (mDNS/NSD)
+ * Rapid Transfer - Discovery Service (UDP Broadcast)
  * Copyright (C) 2025 Seth Johnston - Licensed under AGPL-3.0
  */
 
@@ -7,153 +7,203 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:nsd/nsd.dart';
 import '../models/device.dart';
 import 'device_manager.dart';
 
+const int discoveryPort = 8766;
+const Duration broadcastInterval = Duration(seconds: 5);
+const Duration deviceTimeout = Duration(seconds: 30);
+
 class DiscoveryService {
   final DeviceManager deviceManager;
-  final String serviceType = '_rapidtransfer._tcp';
+  final int port;
 
-  Discovery? _discovery;
-  Registration? _registration;
+  RawDatagramSocket? _socket;
+  Timer? _broadcastTimer;
+  Timer? _cleanupTimer;
   bool _isRunning = false;
+  final Map<String, DateTime> _discoveredDevices = {};
 
-  DiscoveryService(this.deviceManager);
+  DiscoveryService({
+    required this.deviceManager,
+    this.port = discoveryPort,
+  });
 
   Future<void> start() async {
     if (_isRunning) return;
 
     try {
-      // Register our service
-      await _registerService();
+      // Create UDP socket
+      _socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, port);
+      _socket!.broadcastEnabled = true;
 
-      // Start discovering other services
-      await _startDiscovery();
+      debugPrint('UDP Discovery listening on port $port');
+
+      // Listen for incoming messages
+      _socket!.listen((event) {
+        if (event == RawSocketEvent.read) {
+          final datagram = _socket!.receive();
+          if (datagram != null) {
+            _handleMessage(datagram);
+          }
+        }
+      });
+
+      // Start broadcasting our presence
+      _startBroadcasting();
+
+      // Start cleanup timer
+      _cleanupTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+        _cleanupStaleDevices();
+      });
 
       _isRunning = true;
-      debugPrint('Discovery service started');
+      debugPrint('UDP Discovery service started');
     } catch (e) {
       debugPrint('Failed to start discovery service: $e');
       rethrow;
     }
   }
 
-  Future<void> _registerService() async {
-    try {
-      final service = Service(
-        name: deviceManager.localDeviceName,
-        type: serviceType,
-        port: 8765,
-        txt: {
-          'id': Uint8List.fromList(
-            utf8.encode(deviceManager.getLocalDeviceId() ?? 'unknown'),
-          ),
-          'version': Uint8List.fromList(utf8.encode('0.1.0')),
-          'platform': Uint8List.fromList(utf8.encode(Platform.operatingSystem)),
-        },
-      );
+  void _startBroadcasting() {
+    void broadcast() {
+      final message = _createBroadcastMessage();
+      final broadcastAddresses = _getBroadcastAddresses();
 
-      _registration = await register(service);
-      debugPrint('Service registered: ${deviceManager.localDeviceName}');
-    } catch (e) {
-      debugPrint('Service registration failed: $e');
-    }
-  }
-
-  Future<void> _startDiscovery() async {
-    try {
-      _discovery = await startDiscovery(
-        serviceType,
-        ipLookupType: IpLookupType.any,
-      );
-
-      _discovery!.addServiceListener((service, status) {
-        switch (status) {
-          case ServiceStatus.found:
-            _handleServiceFound(service);
-            break;
-          case ServiceStatus.lost:
-            _handleServiceLost(service);
-            break;
-        }
-      });
-
-      debugPrint('Discovery started for type: $serviceType');
-    } catch (e) {
-      debugPrint('Discovery failed: $e');
-    }
-  }
-
-  void _handleServiceFound(Service service) {
-    // Resolve service to get full details
-    resolve(service)
-        .then((resolved) {
-          final deviceIdBytes = resolved.txt?['id'];
-          final platformBytes = resolved.txt?['platform'];
-          final versionBytes = resolved.txt?['version'];
-
-          final deviceId = deviceIdBytes != null
-              ? utf8.decode(deviceIdBytes)
-              : (resolved.name ?? 'unknown');
-
-          // Don't add ourselves
-          if (deviceId == deviceManager.getLocalDeviceId()) {
-            return;
-          }
-
-          final device = Device(
-            id: deviceId,
-            name: resolved.name ?? 'Unknown Device',
-            address: resolved.host ?? '',
-            port: resolved.port ?? 8765,
-            platform: platformBytes != null
-                ? utf8.decode(platformBytes)
-                : 'unknown',
-            version: versionBytes != null ? utf8.decode(versionBytes) : '0.0.0',
+      for (final address in broadcastAddresses) {
+        try {
+          _socket?.send(
+            message,
+            InternetAddress(address),
+            port,
           );
+        } catch (e) {
+          debugPrint('Failed to send broadcast to $address: $e');
+        }
+      }
+    }
 
-          debugPrint('Device discovered: ${device.name} at ${device.address}');
-          deviceManager.addDevice(device);
-        })
-        .catchError((e) {
-          debugPrint('Failed to resolve service: $e');
-        });
+    // Broadcast immediately and then periodically
+    broadcast();
+    _broadcastTimer = Timer.periodic(broadcastInterval, (_) => broadcast());
   }
 
-  void _handleServiceLost(Service service) {
-    final deviceIdBytes = service.txt?['id'];
-    final deviceId = deviceIdBytes != null
-        ? utf8.decode(deviceIdBytes)
-        : (service.name ?? 'unknown');
-    debugPrint('Device lost: $deviceId');
-    deviceManager.removeDevice(deviceId);
+  List<int> _createBroadcastMessage() {
+    final deviceInfo = {
+      'id': deviceManager.getLocalDeviceId() ?? 'unknown',
+      'name': deviceManager.localDeviceName,
+      'platform': Platform.operatingSystem,
+      'version': '0.1.0',
+      'port': 8765,
+    };
+    return utf8.encode(json.encode(deviceInfo));
+  }
+
+  List<String> _getBroadcastAddresses() {
+    final addresses = <String>[];
+
+    try {
+      // Get network interfaces synchronously is not available in Dart
+      // We'll use the simpler approach with common broadcast addresses
+      
+      // For Android/iOS, using the subnet broadcast addresses
+      // We can attempt to calculate based on common network configurations
+      
+      // Add common private network broadcast addresses
+      addresses.add('192.168.1.255');   // Common home network
+      addresses.add('192.168.0.255');   // Common home network
+      addresses.add('10.0.2.255');      // Android emulator network
+      addresses.add('172.16.0.255');    // Common private network
+      
+    } catch (e) {
+      debugPrint('Failed to get broadcast addresses: $e');
+    }
+
+    // Always include global broadcast as fallback
+    addresses.add('255.255.255.255');
+
+    return addresses;
+  }
+
+  void _handleMessage(Datagram datagram) {
+    try {
+      final message = utf8.decode(datagram.data);
+      final data = json.decode(message) as Map<String, dynamic>;
+
+      // Validate message format
+      if (!data.containsKey('id') ||
+          !data.containsKey('name') ||
+          !data.containsKey('port')) {
+        return;
+      }
+
+      final deviceId = data['id'] as String;
+
+      // Don't add ourselves
+      if (deviceId == deviceManager.getLocalDeviceId()) {
+        return;
+      }
+
+      // Update last seen time
+      _discoveredDevices[deviceId] = DateTime.now();
+
+      // Create device object
+      final device = Device(
+        id: deviceId,
+        name: data['name'] as String,
+        address: datagram.address.address,
+        port: data['port'] as int,
+        platform: data['platform'] as String? ?? 'unknown',
+        version: data['version'] as String? ?? '0.0.0',
+      );
+
+      // Add or update device
+      deviceManager.addDevice(device);
+    } catch (e) {
+      // Ignore malformed messages
+      debugPrint('Failed to parse broadcast message: ${e.toString()}');
+    }
+  }
+
+  void _cleanupStaleDevices() {
+    final now = DateTime.now();
+    final staleDevices = <String>[];
+
+    _discoveredDevices.forEach((deviceId, lastSeen) {
+      if (now.difference(lastSeen) > deviceTimeout) {
+        staleDevices.add(deviceId);
+      }
+    });
+
+    for (final deviceId in staleDevices) {
+      _discoveredDevices.remove(deviceId);
+      deviceManager.removeDevice(deviceId);
+      debugPrint('Device timed out: $deviceId');
+    }
   }
 
   Future<void> updateServiceName(String name) async {
-    if (_registration != null) {
-      // Cancel the registration
-      _registration = null;
-      await _registerService();
-    }
+    // Name will be updated on next broadcast automatically
+    // No action needed - broadcast timer will pick up new name
   }
 
   Future<void> stop() async {
     if (!_isRunning) return;
 
     try {
-      if (_discovery != null) {
-        await stopDiscovery(_discovery!);
-        _discovery = null;
-      }
+      _broadcastTimer?.cancel();
+      _broadcastTimer = null;
 
-      if (_registration != null) {
-        // Cancel the registration
-        _registration = null;
-      }
+      _cleanupTimer?.cancel();
+      _cleanupTimer = null;
+
+      _socket?.close();
+      _socket = null;
+
+      _discoveredDevices.clear();
 
       _isRunning = false;
-      debugPrint('Discovery service stopped');
+      debugPrint('UDP Discovery service stopped');
     } catch (e) {
       debugPrint('Error stopping discovery service: $e');
     }
