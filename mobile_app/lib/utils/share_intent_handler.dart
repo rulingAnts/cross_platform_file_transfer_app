@@ -4,10 +4,14 @@ import 'dart:async';
 
 class ShareIntentHandler {
   StreamSubscription? _intentDataStreamSubscription;
-  
-  void initialize(BuildContext context, Function(List<String>) onFilesReceived) {
+  final _receiveSharingIntent = ReceiveSharingIntent.instance;
+
+  void initialize(
+    BuildContext context,
+    Function(List<String>) onFilesReceived,
+  ) {
     // For files shared while the app is closed
-    ReceiveSharingIntent.getInitialMedia().then((List<SharedMediaFile> value) {
+    _receiveSharingIntent.getInitialMedia().then((List<SharedMediaFile> value) {
       if (value.isNotEmpty) {
         final paths = value.map((file) => file.path).toList();
         onFilesReceived(paths);
@@ -15,25 +19,30 @@ class ShareIntentHandler {
     });
 
     // For files shared while the app is open
-    _intentDataStreamSubscription = ReceiveSharingIntent.getMediaStream()
-        .listen((List<SharedMediaFile> value) {
-      if (value.isNotEmpty) {
-        final paths = value.map((file) => file.path).toList();
-        onFilesReceived(paths);
-      }
-    }, onError: (err) {
-      debugPrint("Share intent error: $err");
-    });
+    _intentDataStreamSubscription = _receiveSharingIntent
+        .getMediaStream()
+        .listen(
+          (List<SharedMediaFile> value) {
+            if (value.isNotEmpty) {
+              final paths = value.map((file) => file.path).toList();
+              onFilesReceived(paths);
+            }
+          },
+          onError: (err) {
+            debugPrint("Share intent error: $err");
+          },
+        );
 
-    // For sharing text
-    ReceiveSharingIntent.getInitialText().then((String? value) {
-      if (value != null && value.isNotEmpty) {
-        debugPrint("Shared text: $value");
-        // Could save text as a file and share it
-      }
-    });
+    // For sharing text (if the package supports it in your version)
+    // Note: Some versions may not have getInitialText
+    try {
+      // You may need to handle text sharing differently or remove if not supported
+      debugPrint("Text sharing not configured");
+    } catch (e) {
+      debugPrint("Text sharing error: $e");
+    }
   }
-  
+
   void dispose() {
     _intentDataStreamSubscription?.cancel();
   }

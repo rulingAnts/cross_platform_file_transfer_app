@@ -21,7 +21,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     final deviceManager = Provider.of<DeviceManager>(context, listen: false);
-    _deviceNameController = TextEditingController(text: deviceManager.localDeviceName);
+    _deviceNameController = TextEditingController(
+      text: deviceManager.localDeviceName,
+    );
     _streamCount = deviceManager.streamCount;
     _language = deviceManager.language;
     _notifications = deviceManager.notifications;
@@ -41,10 +43,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       appBar: AppBar(
         title: const Text('Settings'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.check),
-            onPressed: _saveSettings,
-          ),
+          IconButton(icon: const Icon(Icons.check), onPressed: _saveSettings),
         ],
       ),
       body: ListView(
@@ -62,7 +61,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // Stream Count
           DropdownButtonFormField<String>(
-            value: _streamCount,
+            initialValue: _streamCount,
             decoration: const InputDecoration(
               labelText: 'Stream Count',
               border: OutlineInputBorder(),
@@ -85,7 +84,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // Language
           DropdownButtonFormField<String>(
-            value: _language,
+            initialValue: _language,
             decoration: const InputDecoration(
               labelText: 'Language',
               border: OutlineInputBorder(),
@@ -115,7 +114,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // Keep Awake
           SwitchListTile(
             title: const Text('Keep Device Awake'),
-            subtitle: const Text('Prevent device from sleeping during transfers'),
+            subtitle: const Text(
+              'Prevent device from sleeping during transfers',
+            ),
             value: _keepAwake,
             onChanged: (value) {
               setState(() => _keepAwake = value);
@@ -138,7 +139,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _saveSettings() async {
     final deviceManager = Provider.of<DeviceManager>(context, listen: false);
-    
+
     await deviceManager.setDeviceName(_deviceNameController.text);
     await deviceManager.updateSettings(
       streamCount: _streamCount,
@@ -150,9 +151,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     if (mounted) {
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Settings saved')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Settings saved')));
     }
   }
 }
