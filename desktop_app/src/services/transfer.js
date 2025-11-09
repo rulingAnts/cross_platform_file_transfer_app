@@ -266,24 +266,194 @@ class TransferService extends EventEmitter {
   }
 
   async connectAndTransfer(device, transfer) {
-    // This is a simplified version
-    // Real implementation would handle multi-stream, chunking, etc.
-    transfer.status = 'transferring';
-    transfer.progress = 0;
-    this.emit('transfer-progress', transfer);
-
-    // Simulate transfer for now
-    const interval = setInterval(() => {
-      transfer.progress += 10;
-      if (transfer.progress >= 100) {
-        transfer.progress = 100;
-        transfer.status = 'completed';
-        clearInterval(interval);
-        this.emit('transfer-complete', transfer);
-      } else {
-        this.emit('transfer-progress', transfer);
+    try {
+      // Connect to device
+      const socket = await this.connectToDevice(device);
+      transfer.socket = socket;
+      
+      // Send transfer request
+      await this.sendMessage(socket, 3, {
+        transferId: transfer.id,
+        fileName: path.basename(transfer.filePath),
+        fileSize: transfer.size,
+        checksum: transfer.checksum,
+        isDirectory: transfer.isDirectory
+      });
+      
+      // Wait for acceptance
+      await this.waitForAcceptance(socket, transfer);
+      
+      // Calculate stream count based on file size
+      const streamCount = this.calculateStreamCount(transfer.size);
+      
+      // Split file into chunks
+      const chunkSize = 1024 * 1024; // 1 MB
+      const chunks = Math.ceil(transfer.size / chunkSize);
+      
+      transfer.status = 'transferring';
+      transfer.progress = 0;
+      transfer.chunks = chunks;
+      transfer.sentChunks = 0;
+      this.emit('transfer-progress', transfer);
+      
+      // Send chunks
+      await this.sendFileChunks(socket, transfer, chunkSize, streamCount);
+      
+      // Mark complete
+      transfer.status = 'completed';
+      transfer.progress = 100;
+      this.emit('transfer-complete', transfer);
+      
+      // Cleanup
+      if (transfer.tempPath) {
+        await fs.unlink(transfer.tempPath).catch(() => {});
       }
-    }, 500);
+      
+    } catch (err) {
+      transfer.status = 'failed';
+      transfer.error = err.message;
+      this.emit('transfer-error', transfer, err);
+      throw err;
+    }
+  }
+  
+  async connectToDevice(device) {
+    return new Promise((resolve, reject) => {
+      const socket = tls.connect({
+        host: device.address,
+        port: device.port,
+        rejectUnauthorized: false
+      }, () => {
+        console.log('Connected to device:', device.id);
+        resolve(socket);
+      });
+      
+      socket.on('error', (err) => {
+        reject(err);
+      });
+      
+      socket.setTimeout(30000); // 30 second timeout
+      socket.on('timeout', () => {
+        socket.destroy();
+        reject(new Error('Connection timeout'));
+      });
+    });
+  }
+  
+  async sendMessage(socket, type, data) {
+    const jsonData = JSON.stringify(data);
+    const dataBuffer = Buffer.from(jsonData);
+    const length = dataBuffer.length + 1; // +1 for type byte
+    
+    const message = Buffer.allocUnsafe(4 + 1 + dataBuffer.length);
+    message.writeUInt32BE(length, 0);
+    message.writeUInt8(type, 4);
+    dataBuffer.copy(message, 5);
+    
+    return new Promise((resolve, reject) => {
+      socket.write(message, (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+  }
+  
+  async waitForAcceptance(socket, transfer) {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('Transfer acceptance timeout'));
+      }, 30000);
+      
+      const handler = (data) => {
+        try {
+          const type = data.readUInt8(4);
+          if (type === 4) { // TRANSFER_ACCEPT
+            clearTimeout(timeout);
+            socket.removeListener('data', handler);
+            resolve();
+          }
+        } catch (err) {
+          // Ignore parsing errors, wait for correct message
+        }
+      };
+      
+      socket.on('data', handler);
+    });
+  }
+  
+  calculateStreamCount(fileSize) {
+    if (fileSize < 10 * 1024 * 1024) return 1; // < 10 MB
+    if (fileSize < 100 * 1024 * 1024) return 2; // < 100 MB
+    if (fileSize < 1024 * 1024 * 1024) return 4; // < 1 GB
+    return 6; // >= 1 GB
+  }
+  
+  async sendFileChunks(socket, transfer, chunkSize, streamCount) {
+    const fileStream = require('fs').createReadStream(transfer.tempPath, {
+      highWaterMark: chunkSize
+    });
+    
+    let chunkIndex = 0;
+    let totalSent = 0;
+    const startTime = Date.now();
+    
+    for await (const chunk of fileStream) {
+      // Calculate checksum for chunk
+      const chunkHash = crypto.createHash('sha256').update(chunk).digest('hex');
+      
+      // Send chunk
+      await this.sendChunkData(socket, {
+        transferId: transfer.id,
+        chunkIndex: chunkIndex++,
+        data: chunk.toString('base64'),
+        checksum: chunkHash
+      });
+      
+      totalSent += chunk.length;
+      transfer.sentChunks++;
+      
+      // Update progress
+      transfer.progress = (totalSent / transfer.size) * 100;
+      const elapsed = (Date.now() - startTime) / 1000;
+      transfer.speed = totalSent / elapsed;
+      
+      this.emit('transfer-progress', transfer);
+      
+      // Wait for chunk acknowledgment with timeout
+      await this.waitForChunkAck(socket, chunkIndex - 1, 5000);
+    }
+  }
+  
+  async sendChunkData(socket, data) {
+    return this.sendMessage(socket, 5, data);
+  }
+  
+  async waitForChunkAck(socket, chunkIndex, timeout) {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        socket.removeListener('data', handler);
+        reject(new Error(`Chunk ${chunkIndex} acknowledgment timeout`));
+      }, timeout);
+      
+      const handler = (data) => {
+        try {
+          if (data.length < 5) return;
+          const type = data.readUInt8(4);
+          if (type === 6) { // CHUNK_ACK
+            const message = JSON.parse(data.slice(5).toString());
+            if (message.chunkIndex === chunkIndex) {
+              clearTimeout(timer);
+              socket.removeListener('data', handler);
+              resolve();
+            }
+          }
+        } catch (err) {
+          // Ignore parsing errors
+        }
+      };
+      
+      socket.on('data', handler);
+    });
   }
 
   generateVerificationCode() {
@@ -315,27 +485,192 @@ class TransferService extends EventEmitter {
   handleVerifyRequest(socket, message) {
     // Handle incoming verification request
     const code = this.generateVerificationCode();
+    this.verificationCodes.set(message.deviceId, {
+      code,
+      socket,
+      expiresAt: Date.now() + 300000
+    });
     this.emit('verification-required', message.deviceId, code);
+    
+    // Send verification code back
+    this.sendMessage(socket, 1, {
+      deviceId: this.deviceManager.getLocalDeviceId(),
+      code
+    }).catch(err => console.error('Failed to send verification:', err));
   }
 
   handleVerifyResponse(socket, message) {
     // Handle verification response
+    const verification = this.verificationCodes.get(message.deviceId);
+    if (verification && verification.code === message.code && message.accepted) {
+      this.deviceManager.trustDevice(message.deviceId, message.publicKey);
+      this.verificationCodes.delete(message.deviceId);
+    }
   }
 
-  handleTransferRequest(socket, message) {
+  async handleTransferRequest(socket, message) {
     // Handle incoming transfer request
+    const { transferId, fileName, fileSize, checksum, isDirectory } = message;
+    
+    // Check available space
+    const downloadPath = path.join(
+      require('os').homedir(),
+      'Downloads',
+      fileName
+    );
+    
+    const incomingPath = path.join(this.tempDir, 'incoming', transferId);
+    await fs.mkdir(path.dirname(incomingPath), { recursive: true });
+    
+    // Create incoming transfer object
+    const transfer = {
+      id: transferId,
+      fileName,
+      fileSize,
+      checksum,
+      isDirectory,
+      incomingPath,
+      downloadPath,
+      chunks: [],
+      receivedSize: 0,
+      status: 'receiving'
+    };
+    
+    this.transfers.set(transferId, transfer);
+    
+    // Send acceptance
+    await this.sendMessage(socket, 4, {
+      transferId,
+      accepted: true
+    });
+    
+    // Store socket for this transfer
+    transfer.socket = socket;
+    this.emit('transfer-progress', transfer);
   }
 
   handleTransferAccept(socket, message) {
-    // Handle transfer acceptance
+    // Handle transfer acceptance - already handled in waitForAcceptance
   }
 
-  handleChunkData(socket, message) {
-    // Handle incoming chunk data
+  async handleChunkData(socket, message) {
+    const { transferId, chunkIndex, data, checksum } = message;
+    const transfer = this.transfers.get(transferId);
+    
+    if (!transfer) {
+      console.error('Transfer not found:', transferId);
+      return;
+    }
+    
+    try {
+      // Decode chunk data
+      const chunkBuffer = Buffer.from(data, 'base64');
+      
+      // Verify chunk checksum
+      const calculatedChecksum = crypto.createHash('sha256')
+        .update(chunkBuffer)
+        .digest('hex');
+      
+      if (calculatedChecksum !== checksum) {
+        throw new Error(`Chunk ${chunkIndex} checksum mismatch`);
+      }
+      
+      // Write chunk to file
+      const chunkPath = `${transfer.incomingPath}.chunk${chunkIndex}`;
+      await fs.writeFile(chunkPath, chunkBuffer);
+      
+      transfer.chunks[chunkIndex] = {
+        path: chunkPath,
+        size: chunkBuffer.length,
+        received: true
+      };
+      
+      transfer.receivedSize += chunkBuffer.length;
+      transfer.progress = (transfer.receivedSize / transfer.fileSize) * 100;
+      
+      this.emit('transfer-progress', transfer);
+      
+      // Send acknowledgment
+      await this.sendMessage(socket, 6, {
+        transferId,
+        chunkIndex,
+        success: true
+      });
+      
+      // Check if all chunks received
+      if (transfer.receivedSize >= transfer.fileSize) {
+        await this.finalizeReceivedTransfer(transfer);
+      }
+      
+    } catch (err) {
+      console.error('Error handling chunk:', err);
+      // Send error acknowledgment
+      await this.sendMessage(socket, 6, {
+        transferId,
+        chunkIndex,
+        success: false,
+        error: err.message
+      });
+    }
   }
 
   handleChunkAck(socket, message) {
-    // Handle chunk acknowledgment
+    // Acknowledgment already handled in waitForChunkAck
+  }
+  
+  async finalizeReceivedTransfer(transfer) {
+    try {
+      // Merge all chunks into final file
+      const finalPath = transfer.incomingPath;
+      const writeStream = require('fs').createWriteStream(finalPath);
+      
+      for (let i = 0; i < transfer.chunks.length; i++) {
+        const chunk = transfer.chunks[i];
+        if (chunk && chunk.received) {
+          const chunkData = await fs.readFile(chunk.path);
+          writeStream.write(chunkData);
+          // Delete chunk file
+          await fs.unlink(chunk.path).catch(() => {});
+        }
+      }
+      
+      await new Promise((resolve, reject) => {
+        writeStream.end((err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+      
+      // Verify full file checksum
+      const finalChecksum = await this.calculateChecksum(finalPath);
+      if (finalChecksum !== transfer.checksum) {
+        throw new Error('File checksum verification failed');
+      }
+      
+      // Decompress if directory
+      if (transfer.isDirectory) {
+        const extractPath = transfer.downloadPath.replace(/\.tar\.gz$/, '');
+        await tar.extract({
+          file: finalPath,
+          cwd: path.dirname(extractPath)
+        });
+        await fs.unlink(finalPath);
+        transfer.finalPath = extractPath;
+      } else {
+        // Move to Downloads
+        await fs.rename(finalPath, transfer.downloadPath);
+        transfer.finalPath = transfer.downloadPath;
+      }
+      
+      transfer.status = 'completed';
+      transfer.progress = 100;
+      this.emit('transfer-complete', transfer);
+      
+    } catch (err) {
+      transfer.status = 'failed';
+      transfer.error = err.message;
+      this.emit('transfer-error', transfer, err);
+    }
   }
 
   getTransfers() {
