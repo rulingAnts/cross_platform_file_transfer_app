@@ -25,7 +25,7 @@ void main() async {
   final deviceManager = DeviceManager();
   await deviceManager.init();
 
-  final discoveryService = DiscoveryService(deviceManager);
+  final discoveryService = DiscoveryService(deviceManager: deviceManager);
   await discoveryService.start();
 
   final transferService = TransferService(deviceManager);
