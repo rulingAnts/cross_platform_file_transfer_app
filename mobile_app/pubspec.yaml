@@ -17,8 +17,6 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  # Network and discovery
-  nsd: ^4.0.3
   # File handling
   path_provider: ^2.1.4
   file_picker: ^8.1.6
